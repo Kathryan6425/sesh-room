@@ -12,7 +12,7 @@ const ROOMS = [
   { id: "lounge",     name: "The Lounge",       emoji: "🛋️", desc: "Main hangout — pull up, say hey, pass the vibe.", topic: "General sesh",  mode: "All",   color: "#1E4D2E", live: true },
   { id: "wake-bake",  name: "Wake & Bake",      emoji: "☀️", desc: "Morning crew. Coffee, first bowl, plans for the day.", topic: "Morning sesh", mode: "All", color: "#B7791F", live: true },
   { id: "grow-talk",  name: "Grow Talk",        emoji: "🌱", desc: "Lights, soil, tents, harvest help — growers helping growers.", topic: "Growing", mode: "Text", color: "#2F6B3A" },
-  { id: "strain-swap", name: "Strain Swap",     emoji: "🌿", desc: "What are you smoking? Reviews, favorites, and finds.", topic: "Strains", mode: "All", color: "#4A6741" },
+  { id: "strain-swap", name: "Strain Swap",     emoji: "💨", desc: "What are you smoking? Reviews, favorites, and finds.", topic: "Strains", mode: "All", color: "#4A6741" },
   { id: "late-night", name: "Late Night Sesh",  emoji: "🌙", desc: "After midnight. Chill music, deep talks, slow vibes.", topic: "Late night", mode: "Voice", color: "#2C3E2D", live: true },
   { id: "munchies",   name: "Munchies & Music", emoji: "🍕", desc: "Snack rankings, playlists, and what you're listening to.", topic: "Food + music", mode: "Text", color: "#8A5A2B" }
 ];
@@ -52,12 +52,12 @@ if (sbReady) sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnon
 /* ---------- identity: a display name on this device ---------- */
 let displayName = localStorage.getItem("sesh_name") || "";
 function refreshNameChip() {
-  $("nameChip").textContent = displayName ? "🌿 " + displayName : "Set your name";
+  $("nameChip").textContent = displayName ? displayName : "Set your name";
 }
 function requireName() {
   if (displayName) return true;
   openNameModal();
-  toast("Pick a display name first 🌿");
+  toast("Pick a display name first");
   return false;
 }
 function openNameModal() {
@@ -74,7 +74,7 @@ $("nameSaveBtn").addEventListener("click", () => {
   localStorage.setItem("sesh_name", v);
   $("nameOverlay").hidden = true;
   refreshNameChip();
-  toast("Welcome to the sesh, " + v + "! 🌿");
+  toast("Welcome to the sesh, " + v + "!");
   renderFeed(); renderMessages();
 });
 
@@ -228,7 +228,7 @@ $("postBtn").addEventListener("click", async () => {
   $("postText").value = "";
   posts.unshift(data);
   renderFeed();
-  toast("Posted! 🌿");
+  toast("Posted!");
   loadStats();
 });
 

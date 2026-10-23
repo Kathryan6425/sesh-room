@@ -237,3 +237,4 @@ textarea:focus, input:focus, select:focus { outline: 3px solid rgba(232, 163, 23
 .brand-logo { width: 44px; height: 44px; display: block; }
 .brand-mark { padding: 5px 7px; }
 .age-logo { width: 88px; height: 88px; display: block; margin: 0 auto; }
+.leaf-inline { height: 1.05em; width: auto; vertical-align: -0.14em; }

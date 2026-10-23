@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>The Sesh Room — Geeksmith Made Apps</title>
 <meta name="description" content="A cozy 21+ hangout for cannabis folks: a friendly feed, chat rooms, and live video seshes. By Geeksmith Made Apps.">
-<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="styles.css?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -41,7 +41,7 @@
   <!-- ============ FEED TAB ============ -->
   <section id="tabFeed" class="tab-panel">
     <div class="hero">
-      <h2>Welcome to the sesh 🌿</h2>
+      <h2>Welcome to the sesh <img class="leaf-inline" src="logo.svg" alt=""></h2>
       <p>Pull up, say hey, pass the vibe. Post what you're smoking, ask the growers, rank the munchies.</p>
       <div class="hero-stats">
         <span><b id="statPosts">–</b> posts</span>
@@ -69,7 +69,7 @@
     </section>
 
     <section id="feed" class="feed" aria-label="Community feed"></section>
-    <p id="feedEmpty" class="empty-note" hidden>Quiet so far — yours could be the first post. 🌿</p>
+    <p id="feedEmpty" class="empty-note" hidden>Quiet so far — yours could be the first post. <img class="leaf-inline" src="logo.svg" alt=""></p>
   </section>
 
   <!-- ============ ROOMS TAB ============ -->
@@ -87,7 +87,7 @@
         <p id="roomDesc"></p>
       </div>
       <div id="msgList" class="msg-list" aria-label="Room messages"></div>
-      <p id="msgEmpty" class="empty-note" hidden>Quiet in here — first message sets the vibe. 🌿</p>
+      <p id="msgEmpty" class="empty-note" hidden>Quiet in here — first message sets the vibe. <img class="leaf-inline" src="logo.svg" alt=""></p>
       <div class="msg-compose">
         <input id="msgInput" type="text" maxlength="500" placeholder="Message…" autocomplete="off">
         <button id="msgSendBtn" class="post-btn" type="button">Send</button>
@@ -157,7 +157,7 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=2"></script>
-<script src="app.js?v=2"></script>
+<script src="config.js?v=3"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
