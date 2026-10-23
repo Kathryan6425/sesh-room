@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>The Sesh Room — Geeksmith Made Apps</title>
 <meta name="description" content="A cozy 21+ hangout for cannabis folks: a friendly feed, chat rooms, and live video seshes. By Geeksmith Made Apps.">
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -100,16 +100,39 @@
   <section id="tabLive" class="tab-panel" hidden>
     <div id="liveListView">
       <h2 class="panel-title">Live sesh rooms 🎥</h2>
-      <p class="panel-sub">Real video &amp; voice with real people, powered by Jitsi (free, no account needed). Your camera stays off until you turn it on inside.</p>
+      <p class="panel-sub">Big video, three simple buttons — like going live on Facebook or TikTok, right here in the browser. Nothing to install, no meeting rooms.</p>
       <div id="liveGrid" class="room-grid"></div>
     </div>
     <div id="liveView" hidden>
       <button id="backLiveBtn" class="back-btn" type="button">← All live rooms</button>
-      <h2 id="liveTitle" class="panel-title">Live sesh</h2>
-      <div class="live-frame-wrap">
-        <iframe id="liveFrame" title="Live video sesh" allow="camera; microphone; fullscreen; display-capture; autoplay" allowfullscreen referrerpolicy="no-referrer"></iframe>
+      <div class="live-top">
+        <h2 id="liveTitle" class="panel-title">Live sesh</h2>
+        <span id="liveCount" class="live-people"></span>
       </div>
-      <p class="panel-sub">Tip: use the buttons inside the video to mute, turn your camera on/off, or hang up. Prefer typing? The room's text chat is under Rooms.</p>
+      <p id="liveStatus" class="panel-sub">Checking who's live…</p>
+      <div class="live-stage">
+        <video id="liveVideo" autoplay playsinline></video>
+        <div id="livePlaceholder" class="live-placeholder">
+          <span class="live-ph-emoji">🎥</span>
+          <p id="livePlaceholderText">No one's live in here yet.</p>
+        </div>
+        <span id="liveBadge" class="live-badge stage-badge" hidden>LIVE</span>
+      </div>
+      <div class="live-controls">
+        <button id="liveMicBtn" class="live-ctl" type="button" aria-label="Microphone on or off">🔇</button>
+        <button id="liveCamBtn" class="live-ctl" type="button" aria-label="Camera on or off">📵</button>
+        <button id="liveMainBtn" class="live-main-btn" type="button">🔴 Go Live</button>
+      </div>
+      <p class="panel-sub live-hint" id="liveHint">Tap 📷 to see yourself first, then hit Go Live. Just hanging out? If somebody goes live, they'll pop up right here — tap Watch.</p>
+      <div class="live-chat">
+        <h3>💬 Sesh chat</h3>
+        <div id="liveChatList" class="msg-list live-chat-list"></div>
+        <p id="liveChatEmpty" class="empty-note" hidden>No messages yet in this room.</p>
+        <div class="msg-compose">
+          <input id="liveChatInput" type="text" maxlength="500" placeholder="Say something…" autocomplete="off">
+          <button id="liveChatSend" class="post-btn" type="button">Send</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -157,7 +180,7 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="config.js?v=5"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

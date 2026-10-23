@@ -4,7 +4,7 @@
    Feed posts, comments and room messages live in Supabase (public
    read + add, append-only). Identity is a friendly display name kept
    on this device — same spirit as the private prototype. Live video
-   seshes run on Jitsi (free, no account).
+   seshes run phone-to-phone (WebRTC) with Supabase Realtime signaling.
    Site values come from config.js -> window.SESH_CONFIG.
 */
 
@@ -16,7 +16,6 @@ const ROOMS = [
   { id: "late-night", name: "Late Night Sesh",  emoji: "🌙", desc: "After midnight. Chill music, deep talks, slow vibes.", topic: "Late night", mode: "Voice", color: "#2C3E2D", live: true },
   { id: "munchies",   name: "Munchies & Music", emoji: "🍕", desc: "Snack rankings, playlists, and what you're listening to.", topic: "Food + music", mode: "Text", color: "#8A5A2B" }
 ];
-const JITSI_BASE = "https://meet.jit.si/geeksmith-sesh-";
 
 /* ---------- helpers ---------- */
 const $ = (id) => document.getElementById(id);
@@ -100,6 +99,11 @@ function setTab(name) {
   $("tabLive").hidden = name !== "live";
   $("tabAbout").hidden = name !== "about";
   if (name !== "rooms") stopRoomPoll();
+  if (name !== "live" && liveRoom) {
+    teardownLive();
+    $("liveView").hidden = true;
+    $("liveListView").hidden = false;
+  }
   window.scrollTo({ top: 0 });
 }
 document.querySelectorAll(".tab-btn").forEach((b) =>
@@ -325,25 +329,321 @@ async function sendMessage() {
 $("msgSendBtn").addEventListener("click", sendMessage);
 $("msgInput").addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
 
-/* ---------- live (Jitsi) ---------- */
+/* ---------- live (native, TikTok-style) ----------
+   One host broadcasts; everyone else watches; the room's text chat
+   flows under the video. Signaling rides Supabase Realtime (presence
+   + broadcast); the video itself goes phone-to-phone (WebRTC, STUN
+   only) — free, and right for small-room seshes. */
+const STUN = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const liveClientId = "c" + Math.random().toString(36).slice(2, 10);
+let liveRoom = null;
+let liveMode = "idle"; // idle | preview | host | viewer
+let liveChannel = null;
+let localStream = null;
+let viewerPc = null;           // viewer side: my connection to the host
+const hostPcs = new Map();     // host side: viewerId -> connection
+let currentHost = null;        // { id, name } when someone else is live
+let liveChatPoll = null;
+
 function renderLiveGrid() {
   $("liveGrid").innerHTML = ROOMS.filter((r) => r.live).map((r) => roomCard(r, null)).join("");
   $("liveGrid").querySelectorAll("[data-room]").forEach((el) =>
     el.addEventListener("click", () => openLive(el.getAttribute("data-room"))));
 }
+
+function liveStatus(t) { $("liveStatus").textContent = t; }
+
 function openLive(id) {
-  const room = ROOMS.find((r) => r.id === id) || ROOMS[0];
+  liveRoom = ROOMS.find((r) => r.id === id) || ROOMS[0];
   $("liveListView").hidden = true;
   $("liveView").hidden = false;
-  $("liveTitle").textContent = room.emoji + " " + room.name + " — live sesh";
-  $("liveFrame").src = JITSI_BASE + room.id;
+  $("liveTitle").textContent = liveRoom.emoji + " " + liveRoom.name + " — live sesh";
   window.scrollTo({ top: 0 });
+  resetLiveStage();
+  startLiveChat();
+  if (!sbReady) { liveStatus("Live needs the sesh database — still setting up."); return; }
+  connectLiveChannel();
+}
+
+function resetLiveStage() {
+  liveMode = "idle";
+  currentHost = null;
+  $("liveVideo").srcObject = null;
+  $("livePlaceholder").hidden = false;
+  $("livePlaceholderText").textContent = "No one's live in here yet.";
+  $("liveBadge").hidden = true;
+  $("liveCount").textContent = "";
+  $("liveMainBtn").textContent = "🔴 Go Live";
+  $("liveMainBtn").className = "live-main-btn";
+  setCtlIcons(false, false);
+  liveStatus("Checking who's live…");
+}
+
+function setCtlIcons(micOn, camOn) {
+  $("liveMicBtn").textContent = micOn ? "🎙️" : "🔇";
+  $("liveMicBtn").classList.toggle("on", !!micOn);
+  $("liveCamBtn").textContent = camOn ? "📷" : "📵";
+  $("liveCamBtn").classList.toggle("on", !!camOn);
+}
+
+/* ----- presence: who's here, who's hosting ----- */
+function connectLiveChannel() {
+  liveChannel = sb.channel("sesh-live-" + liveRoom.id, {
+    config: { presence: { key: liveClientId }, broadcast: { self: false } }
+  });
+  liveChannel.on("presence", { event: "sync" }, refreshLivePresence);
+  liveChannel.on("broadcast", { event: "signal" }, ({ payload }) => onSignal(payload));
+  liveChannel.subscribe(async (status) => {
+    if (status === "SUBSCRIBED") {
+      await liveChannel.track({ role: "watcher", name: displayName || "Guest" });
+      refreshLivePresence();
+    }
+  });
+}
+
+function refreshLivePresence() {
+  if (!liveChannel) return;
+  const state = liveChannel.presenceState();
+  let people = 0;
+  let host = null;
+  Object.entries(state).forEach(([key, presences]) => {
+    people += presences.length;
+    presences.forEach((p) => {
+      if (p.role === "host" && key !== liveClientId) host = { id: key, name: p.name || "Someone" };
+    });
+  });
+  $("liveCount").textContent = people > 1 ? "👥 " + people + " here" : "";
+  if (liveMode === "host" || liveMode === "viewer") return;
+  currentHost = host;
+  if (host) {
+    $("livePlaceholderText").textContent = host.name + " is LIVE in here!";
+    $("liveMainBtn").textContent = "▶️ Watch " + host.name;
+    $("liveMainBtn").classList.add("watch");
+    liveStatus(host.name + " is live — tap Watch to jump in.");
+  } else {
+    $("livePlaceholderText").textContent = "No one's live in here yet.";
+    $("liveMainBtn").textContent = liveMode === "preview" ? "🔴 Go Live" : "🔴 Go Live";
+    $("liveMainBtn").classList.remove("watch");
+    if (liveMode === "idle") liveStatus("Nobody's live right now — this room is yours if you want it.");
+    if (liveMode === "preview") liveStatus("That's you! Hit Go Live when you're ready.");
+  }
+}
+
+/* ----- signaling ----- */
+function signal(to, kind, payload) {
+  if (!liveChannel) return;
+  liveChannel.send({ type: "broadcast", event: "signal", payload: Object.assign({ to, from: liveClientId, kind }, payload || {}) });
+}
+
+async function onSignal(p) {
+  if (!p || p.to !== liveClientId) return;
+  if (p.kind === "watch" && liveMode === "host") addViewer(p.from);
+  else if (p.kind === "offer" && liveMode === "viewer") await answerOffer(p);
+  else if (p.kind === "answer" && liveMode === "host") {
+    const pc = hostPcs.get(p.from);
+    if (pc && !pc._remoteSet) { await pc.setRemoteDescription(p.sdp); pc._remoteSet = true; flushIce(pc); }
+  } else if (p.kind === "ice") {
+    const pc = liveMode === "host" ? hostPcs.get(p.from) : viewerPc;
+    if (pc) pushIce(pc, p.candidate);
+  } else if (p.kind === "bye") {
+    if (liveMode === "viewer" && currentHost && p.from === currentHost.id) seshEnded("The sesh ended — thanks for hanging out.");
+    if (liveMode === "host") closeHostPc(p.from);
+  }
+}
+function pushIce(pc, candidate) {
+  if (!candidate) return;
+  if (pc._remoteSet) pc.addIceCandidate(candidate).catch(() => {});
+  else (pc._pendingIce = pc._pendingIce || []).push(candidate);
+}
+function flushIce(pc) {
+  (pc._pendingIce || []).forEach((c) => pc.addIceCandidate(c).catch(() => {}));
+  pc._pendingIce = [];
+}
+
+/* ----- host side ----- */
+async function ensureLocalStream() {
+  if (localStream) return localStream;
+  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  const v = $("liveVideo");
+  v.srcObject = localStream;
+  v.muted = true; // never echo yourself
+  $("livePlaceholder").hidden = true;
+  setCtlIcons(true, true);
+  return localStream;
+}
+
+async function goLive() {
+  if (!requireName()) return;
+  try {
+    await ensureLocalStream();
+  } catch (e) {
+    liveStatus("Your camera/mic didn't open — check the browser's permission, or just watch and chat instead.");
+    return;
+  }
+  liveMode = "host";
+  $("liveBadge").hidden = false;
+  $("liveMainBtn").textContent = "⏹ End Live";
+  $("liveMainBtn").className = "live-main-btn end";
+  liveStatus("You're LIVE 🔴 — anyone who opens this room sees you. Say hey!");
+  if (liveChannel) await liveChannel.track({ role: "host", name: displayName });
+}
+
+function addViewer(viewerId) {
+  if (hostPcs.has(viewerId) || !localStream) return;
+  const pc = new RTCPeerConnection(STUN);
+  hostPcs.set(viewerId, pc);
+  localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
+  pc.onicecandidate = (e) => { if (e.candidate) signal(viewerId, "ice", { candidate: e.candidate }); };
+  pc.onconnectionstatechange = () => {
+    if (["failed", "closed", "disconnected"].includes(pc.connectionState)) closeHostPc(viewerId);
+  };
+  pc.createOffer()
+    .then((offer) => pc.setLocalDescription(offer).then(() => signal(viewerId, "offer", { sdp: pc.localDescription })))
+    .catch(() => closeHostPc(viewerId));
+}
+function closeHostPc(viewerId) {
+  const pc = hostPcs.get(viewerId);
+  if (pc) { try { pc.close(); } catch (e) {} hostPcs.delete(viewerId); }
+}
+
+async function endLive() {
+  hostPcs.forEach((pc, viewerId) => { signal(viewerId, "bye", {}); try { pc.close(); } catch (e) {} });
+  hostPcs.clear();
+  stopLocalStream();
+  if (liveChannel) await liveChannel.track({ role: "watcher", name: displayName || "Guest" });
+  resetLiveStage();
+  liveStatus("You ended the sesh. Hope it was a good one.");
+  refreshLivePresence();
+}
+
+/* ----- viewer side ----- */
+function startWatching() {
+  if (!currentHost) return;
+  liveMode = "viewer";
+  liveStatus("Connecting to " + currentHost.name + "'s sesh…");
+  $("liveMainBtn").textContent = "Leave";
+  $("liveMainBtn").className = "live-main-btn end";
+  signal(currentHost.id, "watch", {});
+}
+
+async function answerOffer(p) {
+  closeViewerPc();
+  viewerPc = new RTCPeerConnection(STUN);
+  viewerPc.onicecandidate = (e) => { if (e.candidate) signal(p.from, "ice", { candidate: e.candidate }); };
+  viewerPc.ontrack = (e) => {
+    const v = $("liveVideo");
+    v.srcObject = e.streams[0];
+    v.muted = false;
+    $("livePlaceholder").hidden = true;
+    $("liveBadge").hidden = false;
+    liveStatus("You're watching " + (currentHost ? currentHost.name : "the sesh") + " 🔴 — chat below!");
+  };
+  viewerPc.onconnectionstatechange = () => {
+    if (["failed", "closed"].includes(viewerPc.connectionState) && liveMode === "viewer")
+      seshEnded("The connection dropped — the sesh may have ended.");
+  };
+  await viewerPc.setRemoteDescription(p.sdp);
+  viewerPc._remoteSet = true;
+  flushIce(viewerPc);
+  const answer = await viewerPc.createAnswer();
+  await viewerPc.setLocalDescription(answer);
+  signal(p.from, "answer", { sdp: viewerPc.localDescription });
+}
+function closeViewerPc() {
+  if (viewerPc) { try { viewerPc.close(); } catch (e) {} viewerPc = null; }
+}
+function endWatch() {
+  if (currentHost) signal(currentHost.id, "bye", {});
+  closeViewerPc();
+  resetLiveStage();
+  liveStatus("You left the sesh.");
+  refreshLivePresence();
+}
+function seshEnded(msg) {
+  closeViewerPc();
+  resetLiveStage();
+  liveStatus(msg);
+  refreshLivePresence();
+}
+
+/* ----- controls ----- */
+function stopLocalStream() {
+  if (localStream) { localStream.getTracks().forEach((t) => t.stop()); localStream = null; }
+  $("liveVideo").srcObject = null;
+}
+$("liveMainBtn").addEventListener("click", () => {
+  if (liveMode === "host") endLive();
+  else if (liveMode === "viewer") endWatch();
+  else if (currentHost) startWatching();
+  else goLive();
+});
+$("liveCamBtn").addEventListener("click", async () => {
+  if (liveMode === "viewer") { toast("You're watching — Leave first, then Go Live to get on camera."); return; }
+  if (localStream) {
+    const track = localStream.getVideoTracks()[0];
+    if (liveMode === "host" && track) { track.enabled = !track.enabled; setCtlIcons(localStream.getAudioTracks()[0]?.enabled, track.enabled); }
+    else { stopLocalStream(); liveMode = "idle"; $("livePlaceholder").hidden = false; setCtlIcons(false, false); refreshLivePresence(); }
+  } else {
+    try { await ensureLocalStream(); liveMode = "preview"; liveStatus("That's you! Hit Go Live when you're ready."); }
+    catch (e) { liveStatus("Camera didn't open — you can still watch and chat."); }
+  }
+});
+$("liveMicBtn").addEventListener("click", () => {
+  if (!localStream) { toast("Turn your camera on first — the mic comes with it."); return; }
+  const track = localStream.getAudioTracks()[0];
+  if (track) { track.enabled = !track.enabled; setCtlIcons(track.enabled, localStream.getVideoTracks()[0]?.enabled); }
+});
+
+function teardownLive() {
+  if (liveMode === "host") { hostPcs.forEach((pc) => { try { pc.close(); } catch (e) {} }); hostPcs.clear(); }
+  closeViewerPc();
+  stopLocalStream();
+  if (liveChannel) { sb.removeChannel(liveChannel); liveChannel = null; }
+  if (liveChatPoll) { clearInterval(liveChatPoll); liveChatPoll = null; }
+  liveRoom = null;
+  liveMode = "idle";
 }
 $("backLiveBtn").addEventListener("click", () => {
-  $("liveFrame").src = "about:blank"; // hang up
+  teardownLive();
   $("liveView").hidden = true;
   $("liveListView").hidden = false;
 });
+
+/* ----- live chat (same room messages as the Rooms tab) ----- */
+let liveChatMsgs = [];
+async function startLiveChat() {
+  await loadLiveChat();
+  if (liveChatPoll) clearInterval(liveChatPoll);
+  liveChatPoll = setInterval(loadLiveChat, 4000);
+}
+async function loadLiveChat() {
+  if (!liveRoom || !sbReady) return;
+  const { data, error } = await sb.from("sesh_messages").select("*")
+    .eq("room_id", liveRoom.id).order("created_at", { ascending: true }).limit(100);
+  if (error) return;
+  liveChatMsgs = data || [];
+  $("liveChatEmpty").hidden = liveChatMsgs.length > 0;
+  $("liveChatList").innerHTML = liveChatMsgs.map((m) => `
+    <div class="msg ${displayName && m.author_name === displayName ? "mine" : ""}">
+      <span class="avatar">${esc(initials(m.author_name))}</span>
+      <span class="msg-body">
+        <span class="msg-name">${esc(m.author_name)}<span class="msg-time">${timeAgo(m.created_at)}</span></span><br>
+        <span class="msg-text">${esc(m.content)}</span>
+      </span>
+    </div>`).join("");
+}
+async function sendLiveChat() {
+  if (!requireName() || !liveRoom) return;
+  const content = $("liveChatInput").value.trim();
+  if (!content) return;
+  $("liveChatInput").value = "";
+  const { error } = await sb.from("sesh_messages")
+    .insert({ room_id: liveRoom.id, author_name: displayName, content });
+  if (error) { toast("Message didn't send — check your signal."); return; }
+  loadLiveChat();
+}
+$("liveChatSend").addEventListener("click", sendLiveChat);
+$("liveChatInput").addEventListener("keydown", (e) => { if (e.key === "Enter") sendLiveChat(); });
 
 /* ---------- go ---------- */
 refreshNameChip();
