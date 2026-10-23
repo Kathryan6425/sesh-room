@@ -232,3 +232,8 @@ textarea:focus, input:focus, select:focus { outline: 3px solid rgba(232, 163, 23
   font-size: 15px; font-weight: 700; z-index: 99; box-shadow: 0 8px 24px rgba(0,0,0,.35);
   max-width: 92vw; text-align: center;
 }
+
+/* ---------- leaf logo (Oct 23, 2026) ---------- */
+.brand-logo { width: 44px; height: 44px; display: block; }
+.brand-mark { padding: 5px 7px; }
+.age-logo { width: 88px; height: 88px; display: block; margin: 0 auto; }

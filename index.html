@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>The Sesh Room — Geeksmith Made Apps</title>
 <meta name="description" content="A cozy 21+ hangout for cannabis folks: a friendly feed, chat rooms, and live video seshes. By Geeksmith Made Apps.">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body>
 
 <!-- Age gate (21+) -->
 <div id="ageGate" class="age-gate" hidden>
   <div class="age-card">
-    <p class="age-emoji">🌿</p>
+    <img class="age-logo" src="logo.svg" alt="The Sesh Room leaf logo">
     <h1>The Sesh Room</h1>
     <p class="age-sub">A cozy hangout for cannabis folks — feed, chat rooms, and live seshes.</p>
     <p class="age-q">This is a <b>21+</b> space. Are you 21 or older?</p>
@@ -28,7 +28,7 @@
 
 <header class="topbar">
   <div class="brand">
-    <span class="brand-mark">🌿</span>
+    <span class="brand-mark"><img class="brand-logo" src="logo.svg" alt="The Sesh Room leaf logo"></span>
     <div class="brand-text">
       <h1>The Sesh Room</h1>
       <p class="brand-sub">by Geeksmith Made Apps</p>
@@ -157,7 +157,7 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<script src="config.js?v=2"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

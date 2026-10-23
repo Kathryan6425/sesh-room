@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="The Sesh Room cannabis leaf logo">
+  <defs>
+    <linearGradient id="leafg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3d8b4f"/>
+      <stop offset="1" stop-color="#1e4d2e"/>
+    </linearGradient>
+    <g id="leaflet">
+      <path d="M50,80 C43,62 42,38 50,10 C58,38 57,62 50,80 Z" fill="url(#leafg)"/>
+    </g>
+  </defs>
+  <!-- fan of seven leaflets -->
+  <use href="#leaflet" transform="translate(50 80) rotate(-68) scale(0.58) translate(-50 -80)"/>
+  <use href="#leaflet" transform="translate(50 80) rotate(68) scale(0.58) translate(-50 -80)"/>
+  <use href="#leaflet" transform="translate(50 80) rotate(-45) scale(0.74) translate(-50 -80)"/>
+  <use href="#leaflet" transform="translate(50 80) rotate(45) scale(0.74) translate(-50 -80)"/>
+  <use href="#leaflet" transform="translate(50 80) rotate(-22) scale(0.88) translate(-50 -80)"/>
+  <use href="#leaflet" transform="translate(50 80) rotate(22) scale(0.88) translate(-50 -80)"/>
+  <use href="#leaflet"/>
+  <!-- stem -->
+  <path d="M50,80 L50,93" stroke="#1e4d2e" stroke-width="3.5" stroke-linecap="round"/>
+</svg>
