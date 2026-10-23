@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Sesh Room — Geeksmith Made Apps</title>
+<meta name="description" content="A cozy 21+ hangout for cannabis folks: a friendly feed, chat rooms, and live video seshes. By Geeksmith Made Apps.">
+<link rel="stylesheet" href="styles.css?v=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+</head>
+<body>
+
+<!-- Age gate (21+) -->
+<div id="ageGate" class="age-gate" hidden>
+  <div class="age-card">
+    <p class="age-emoji">🌿</p>
+    <h1>The Sesh Room</h1>
+    <p class="age-sub">A cozy hangout for cannabis folks — feed, chat rooms, and live seshes.</p>
+    <p class="age-q">This is a <b>21+</b> space. Are you 21 or older?</p>
+    <button id="ageYesBtn" class="big-btn" type="button">I'm 21+ — let me in</button>
+    <a class="age-no" href="https://www.google.com">Not yet — take me out</a>
+    <p class="age-fine">By entering you agree to the house rules: be kind, no buying or selling, keep it legal where you are.</p>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">🌿</span>
+    <div class="brand-text">
+      <h1>The Sesh Room</h1>
+      <p class="brand-sub">by Geeksmith Made Apps</p>
+    </div>
+    <button id="nameChip" class="name-chip" type="button">Set your name</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ FEED TAB ============ -->
+  <section id="tabFeed" class="tab-panel">
+    <div class="hero">
+      <h2>Welcome to the sesh 🌿</h2>
+      <p>Pull up, say hey, pass the vibe. Post what you're smoking, ask the growers, rank the munchies.</p>
+      <div class="hero-stats">
+        <span><b id="statPosts">–</b> posts</span>
+        <span><b>6</b> rooms</span>
+        <span><b id="statMsgs">–</b> messages</span>
+      </div>
+    </div>
+
+    <section class="card composer">
+      <label class="field-label" for="postText">Share with the room</label>
+      <textarea id="postText" rows="3" maxlength="500" placeholder="What's on your mind (or in your bowl)?"></textarea>
+      <div class="composer-row">
+        <select id="postTag" aria-label="Post tag">
+          <option>General</option>
+          <option>Sesh Check-In</option>
+          <option>Strain Review</option>
+          <option>Grow Update</option>
+          <option>Question</option>
+          <option>Munchies</option>
+          <option>Music</option>
+        </select>
+        <button id="postBtn" class="post-btn" type="button">Post it</button>
+      </div>
+      <p id="feedMsg" class="inline-msg" role="status"></p>
+    </section>
+
+    <section id="feed" class="feed" aria-label="Community feed"></section>
+    <p id="feedEmpty" class="empty-note" hidden>Quiet so far — yours could be the first post. 🌿</p>
+  </section>
+
+  <!-- ============ ROOMS TAB ============ -->
+  <section id="tabRooms" class="tab-panel" hidden>
+    <div id="roomListView">
+      <h2 class="panel-title">Chat rooms</h2>
+      <p class="panel-sub">Pick a room and jump in — text chat, refreshed live.</p>
+      <div id="roomGrid" class="room-grid"></div>
+    </div>
+
+    <div id="roomView" hidden>
+      <button id="backRoomsBtn" class="back-btn" type="button">← All rooms</button>
+      <div id="roomHead" class="room-head">
+        <h2 id="roomTitle">Room</h2>
+        <p id="roomDesc"></p>
+      </div>
+      <div id="msgList" class="msg-list" aria-label="Room messages"></div>
+      <p id="msgEmpty" class="empty-note" hidden>Quiet in here — first message sets the vibe. 🌿</p>
+      <div class="msg-compose">
+        <input id="msgInput" type="text" maxlength="500" placeholder="Message…" autocomplete="off">
+        <button id="msgSendBtn" class="post-btn" type="button">Send</button>
+      </div>
+      <p id="msgMsg" class="inline-msg" role="status"></p>
+    </div>
+  </section>
+
+  <!-- ============ LIVE TAB ============ -->
+  <section id="tabLive" class="tab-panel" hidden>
+    <div id="liveListView">
+      <h2 class="panel-title">Live sesh rooms 🎥</h2>
+      <p class="panel-sub">Real video &amp; voice with real people, powered by Jitsi (free, no account needed). Your camera stays off until you turn it on inside.</p>
+      <div id="liveGrid" class="room-grid"></div>
+    </div>
+    <div id="liveView" hidden>
+      <button id="backLiveBtn" class="back-btn" type="button">← All live rooms</button>
+      <h2 id="liveTitle" class="panel-title">Live sesh</h2>
+      <div class="live-frame-wrap">
+        <iframe id="liveFrame" title="Live video sesh" allow="camera; microphone; fullscreen; display-capture; autoplay" allowfullscreen referrerpolicy="no-referrer"></iframe>
+      </div>
+      <p class="panel-sub">Tip: use the buttons inside the video to mute, turn your camera on/off, or hang up. Prefer typing? The room's text chat is under Rooms.</p>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT TAB ============ -->
+  <section id="tabAbout" class="tab-panel" hidden>
+    <h2 class="panel-title">About The Sesh Room</h2>
+    <section class="card">
+      <p><b>What is this?</b> A cozy corner of the internet for cannabis folks — a friendly feed, six chat rooms, and live video seshes. Like the group chat that never sleeps. Made by <b>Geeksmith Made Apps</b>.</p>
+      <p><b>How it works:</b> pick a display name (tap "Set your name" up top — it can be anything friendly), post to the feed, hop into a room, or join a live sesh. No email, no password.</p>
+    </section>
+    <section class="card">
+      <h3>House rules 🏠</h3>
+      <ul class="rules">
+        <li><b>21+ only.</b> Adults, please.</li>
+        <li><b>Be kind.</b> Disagree without being a jerk.</li>
+        <li><b>No buying or selling.</b> Talk strains all day; don't deal here.</li>
+        <li><b>Keep it legal</b> where you live, and don't drive high. Ever.</li>
+        <li><b>No spam.</b> One post says it fine.</li>
+      </ul>
+      <p class="fine">This is a small community project. Names are display names only — don't share private info you'd mind the room seeing.</p>
+    </section>
+  </section>
+</main>
+
+<!-- Bottom tab bar -->
+<nav class="tabbar" aria-label="Main">
+  <button class="tab-btn active" type="button" data-tab="feed"><span>🏠</span>Feed</button>
+  <button class="tab-btn" type="button" data-tab="rooms"><span>💬</span>Rooms</button>
+  <button class="tab-btn" type="button" data-tab="live"><span>🎥</span>Live</button>
+  <button class="tab-btn" type="button" data-tab="about"><span>ℹ️</span>About</button>
+</nav>
+
+<!-- Display-name modal -->
+<div id="nameOverlay" class="overlay" hidden>
+  <div class="sheet name-sheet">
+    <h2>What should the room call you?</h2>
+    <p class="panel-sub">Any friendly display name — it's how your posts and messages will show up.</p>
+    <label class="field-label" for="nameInput">Display name</label>
+    <input id="nameInput" type="text" maxlength="24" placeholder="e.g. CloudyKat" autocomplete="off">
+    <button id="nameSaveBtn" class="big-btn" type="button">Save my name</button>
+    <button id="nameCancelBtn" class="ghost-btn" type="button">Not now</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=1"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>
